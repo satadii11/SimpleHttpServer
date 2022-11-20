@@ -9,6 +9,8 @@ import java.lang.Exception
 import java.net.ServerSocket
 import java.net.Socket
 import java.net.SocketException
+import java.text.SimpleDateFormat
+import java.util.*
 
 interface HttpServer {
     fun startServer(port: Int)
@@ -98,7 +100,12 @@ class SimpleHttpServer(
     }
 
     private fun processGetMethod(socket: Socket?, httpRequest: HttpRequest) {
-        writeToSocket(socket, HttpResponse(HttpResponseStatusCode.OK, httpRequest.version, "Halo dari Satria"))
+        val response = HttpResponse(
+            HttpResponseStatusCode.OK,
+            httpRequest.version,
+            "Halo for your information, now is ${SimpleDateFormat("dd/MMM/yyyy hh:mm:ss").format(Date())}"
+        )
+        writeToSocket(socket, response)
     }
 
     private fun processBadRequest(socket: Socket?) {
