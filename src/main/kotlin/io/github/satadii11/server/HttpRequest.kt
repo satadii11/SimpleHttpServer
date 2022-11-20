@@ -4,7 +4,8 @@ data class HttpRequest(
     val method: HttpMethod?,
     val route: String,
     val version: String,
-    val headers: Map<String, String>
+    val headers: Map<String, String>,
+    val body: Map<String, String>
 ) {
     companion object {
         private const val DEFAULT_ROUTE = "/"
@@ -27,7 +28,7 @@ data class HttpRequest(
 
                 headers[header[0]] = header[1]
             }
-            return HttpRequest(method, route, version, headers)
+            return HttpRequest(method, route, version, headers, mapOf())
         }
     }
 }

@@ -25,6 +25,8 @@ class SimpleHttpServer(
 
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
 
+    var listener: HttpServerListener? = null
+
     init {
         Runtime.getRuntime().addShutdownHook(Thread {
             closeServerIfStarted()
@@ -58,13 +60,27 @@ class SimpleHttpServer(
 
             if (message.isNotEmpty()) {
                 val httpRequest = HttpRequest.createFrom(message)
-                if (httpRequest.method == HttpMethod.GET) {
-                    processGetMethod(socket, httpRequest)
+                when (httpRequest.method) {
+                    HttpMethod.GET -> {
+                        listener?.createGetResponse()?.let {
+                            it.version = httpRequest.version
+                            writeToSocket(socket, it)
+                        } ?: defaultProcess(socket, httpRequest)
+                    }
+
+                    HttpMethod.POST -> {
+                        listener?.createPostResponse(httpRequest.body)?.let {
+                            it.version = httpRequest.version
+                            writeToSocket(socket, it)
+                        } ?: defaultProcess(socket, httpRequest)
+                    }
+
+                    else -> Unit
                 }
             } else {
                 processBadRequest(socket)
             }
-        } catch(ex: Exception) {
+        } catch (ex: Exception) {
             processServerError(socket)
         } finally {
             socket?.close()
@@ -99,11 +115,11 @@ class SimpleHttpServer(
         }.trim()
     }
 
-    private fun processGetMethod(socket: Socket?, httpRequest: HttpRequest) {
+    private fun defaultProcess(socket: Socket?, httpRequest: HttpRequest) {
         val response = HttpResponse(
             HttpResponseStatusCode.OK,
-            httpRequest.version,
-            "Halo for your information, now is ${SimpleDateFormat("dd/MMM/yyyy hh:mm:ss").format(Date())}"
+            "Halo for your information, now is ${SimpleDateFormat("dd/MMM/yyyy hh:mm:ss").format(Date())}",
+            httpRequest.version
         )
         writeToSocket(socket, response)
     }

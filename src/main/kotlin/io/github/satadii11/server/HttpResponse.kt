@@ -12,8 +12,8 @@ enum class HttpResponseStatusCode(val code: Int, val reasonPhrase: String) {
 
 data class HttpResponse(
     val statusCode: HttpResponseStatusCode,
-    val version: String,
-    val message: String? = null
+    val message: String? = null,
+    var version: String? = null
 ) {
     private val _headers = mutableMapOf<String, String>()
     val headers: Map<String, String> get() = _headers
@@ -45,5 +45,11 @@ data class HttpResponse(
 
     private fun generateHeadersMessage(): String {
         return headers.map { "${it.key}: ${it.value}" }.joinToString(LINE_BREAK)
+    }
+
+    companion object {
+        fun ok(message: String?) = HttpResponse(HttpResponseStatusCode.OK, message)
+        fun badRequest(message: String?) = HttpResponse(HttpResponseStatusCode.BAD_REQUEST, message)
+        fun serverError(message: String?) = HttpResponse(HttpResponseStatusCode.SERVER_ERROR, message)
     }
 }
