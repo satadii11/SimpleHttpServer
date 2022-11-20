@@ -5,6 +5,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import java.lang.Exception
 import java.net.ServerSocket
 import java.net.Socket
 import java.net.SocketException
@@ -49,19 +50,23 @@ class SimpleHttpServer(
     }
 
     private fun process(socket: Socket?) {
-        val message = socket?.let { getMessage(it) } ?: return
-        logger?.i("Received message:\n$message")
+        try {
+            val message = socket?.let { getMessage(it) } ?: return
+            logger?.i("Received message:\n$message")
 
-        if (message.isNotEmpty()) {
-            val httpRequest = HttpRequest.createFrom(message)
-            if (httpRequest.method == HttpMethod.GET) {
-                processGetMethod(socket, httpRequest)
+            if (message.isNotEmpty()) {
+                val httpRequest = HttpRequest.createFrom(message)
+                if (httpRequest.method == HttpMethod.GET) {
+                    processGetMethod(socket, httpRequest)
+                }
+            } else {
+                processBadRequest(socket)
             }
-        } else {
-            processBadRequest(socket)
+        } catch(ex: Exception) {
+            processServerError(socket)
+        } finally {
+            socket?.close()
         }
-
-        socket.close()
     }
 
     private fun closeServerIfStarted() {
@@ -98,6 +103,10 @@ class SimpleHttpServer(
 
     private fun processBadRequest(socket: Socket?) {
         writeToSocket(socket, HttpResponse(HttpResponseStatusCode.BAD_REQUEST, "HTTP/1.1"))
+    }
+
+    private fun processServerError(socket: Socket?) {
+        writeToSocket(socket, HttpResponse(HttpResponseStatusCode.SERVER_ERROR, "HTTP/1.1"))
     }
 
     private fun writeToSocket(socket: Socket?, httpResponse: HttpResponse) {
