@@ -1,6 +1,10 @@
 package io.github.satadii11.server
 
 import io.github.satadii11.log.Logger
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import java.net.ServerSocket
 import java.net.Socket
 import java.net.SocketException
@@ -15,6 +19,8 @@ class SimpleHttpServer(
 ) : HttpServer {
     private var serverSocket: ServerSocket? = null
     private var isStarted = false
+
+    private val coroutineScope = CoroutineScope(Dispatchers.IO)
 
     init {
         Runtime.getRuntime().addShutdownHook(Thread {
@@ -32,20 +38,7 @@ class SimpleHttpServer(
         while (true) {
             logger?.i("Waiting for client request")
             val socket = serverSocket?.accept()
-
-            val message = socket?.let { getMessage(it) } ?: continue
-            logger?.i("Received message:\n$message")
-
-            if (message.isNotEmpty()) {
-                val httpRequest = HttpRequest.createFrom(message)
-                if (httpRequest.method == HttpMethod.GET) {
-                    processGetMethod(socket, httpRequest)
-                }
-            } else {
-                processBadRequest(socket)
-            }
-
-            socket.close()
+            coroutineScope.launch { process(socket) }
         }
     }
 
@@ -55,9 +48,26 @@ class SimpleHttpServer(
         logger?.i("Server is closed")
     }
 
+    private fun process(socket: Socket?) {
+        val message = socket?.let { getMessage(it) } ?: return
+        logger?.i("Received message:\n$message")
+
+        if (message.isNotEmpty()) {
+            val httpRequest = HttpRequest.createFrom(message)
+            if (httpRequest.method == HttpMethod.GET) {
+                processGetMethod(socket, httpRequest)
+            }
+        } else {
+            processBadRequest(socket)
+        }
+
+        socket.close()
+    }
+
     private fun closeServerIfStarted() {
         if (isStarted) {
             logger?.i("Closing the server...")
+            coroutineScope.cancel()
             stopServer()
         }
     }
