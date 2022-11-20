@@ -88,7 +88,7 @@ class SimpleHttpServer(
                 c = inputStream.read()
             }
 
-            toString()
+            toString().toByteArray().decodeToString()
         }.trim()
     }
 
