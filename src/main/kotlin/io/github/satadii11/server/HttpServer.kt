@@ -97,7 +97,7 @@ class SimpleHttpServer(
     }
 
     private fun processBadRequest(socket: Socket?) {
-        writeToSocket(socket, HttpResponse(HttpResponseStatusCode.BAD_REQUEST, "HTTP/1.1", "Kok kosong"))
+        writeToSocket(socket, HttpResponse(HttpResponseStatusCode.BAD_REQUEST, "HTTP/1.1"))
     }
 
     private fun writeToSocket(socket: Socket?, httpResponse: HttpResponse) {

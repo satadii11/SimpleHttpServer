@@ -13,7 +13,7 @@ enum class HttpResponseStatusCode(val code: Int, val reasonPhrase: String) {
 data class HttpResponse(
     val statusCode: HttpResponseStatusCode,
     val version: String,
-    val message: String
+    val message: String? = null
 ) {
     private val _headers = mutableMapOf<String, String>()
     val headers: Map<String, String> get() = _headers
@@ -23,7 +23,6 @@ data class HttpResponse(
     }
 
     fun getResponse(): String {
-//        return "HTTP/1.1 200 OK\r\n\r\n"
         return StringBuilder().apply {
             append(version)
             append(" ")
@@ -32,14 +31,14 @@ data class HttpResponse(
             append(generateHeadersMessage())
             append(LINE_BREAK)
             append(LINE_BREAK)
-            append(message)
+            message?.let { append(message) }
         }.toString()
     }
 
     private fun putGeneralHeaders() {
         _headers.apply {
             put("Content-Type", "text/plain")
-            put("Content-Length", message.toByteArray().size.toString())
+            put("Content-Length", (message?.toByteArray()?.size ?: 0).toString())
             put("Connection", "keep-alive")
         }
     }
